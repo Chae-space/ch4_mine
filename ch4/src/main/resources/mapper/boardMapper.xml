@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fastcampus.ch4.dao.BoardMapper">
+    <!--select id ="select" parameterType="int" resultType="BoardDto"-->
+    <!--게시물번호(bno) 읽어와야 되므로 파라미터 타입 지정해주어야 함. bno 타입이 int이므로 -->
+    <!--이 SQL 실행결과를 담을 resultType도 지정해주어야 함 -->
+    <!--원래는 com.fastcampus.ch4.domain.BoardDto로 다적어줘야 하지만 mybatis-config에 typeAlias설정해놔서 간단하게-->
+    <!-- select bno,
+            title,
+            content,
+            writer,
+            view_cnt,
+            comment_cnt,
+            reg_date,
+            up_date
+     from board
+     where bno= #{bno}
+ </select-->
+
+    <!--전체 게시물 개수 가져옴-->
+    <select id="count" resultType="int">
+        SELECT count(*)
+        FROM board
+    </select>
+
+    <delete id="deleteAll">
+        DELETE
+        FROM board
+    </delete>
+
+    <!--게시물 번호와 작성자가 일치할 때만 삭제 가능-->
+    <delete id="delete" parameterType="map">
+        DELETE
+        FROM board
+        WHERE bno = #{bno}
+          and writer = #{writer}
+    </delete>
+
+    <!--인자로 BoardDto를 주면 values들을 채워줌-->
+    <insert id="insert" parameterType="BoardDto">
+        INSERT INTO board
+            (title, content, writer)
+        VALUES (#{title}, #{content}, #{writer})
+    </insert>
+
+    <!--등록일과 게시물 번호를 역순으로 정렬해서 모든 게시물 보여줌-->
+    <select id="selectAll" resultType="BoardDto">
+        SELECT bno, title, content, writer, view_cnt, comment_cnt, reg_date
+        FROM board
+        ORDER BY reg_date DESC, bno DESC
+    </select>
+
+    <sql id="selectFromBoard">
+        SELECT bno, title, content, writer, view_cnt, comment_cnt, reg_date
+        FROM board
+    </sql>
+
+    <select id="select" parameterType="int" resultType="BoardDto">
+        <include refid="selectFromBoard"/>
+        WHERE bno = #{bno}
+    </select>
+
+    <!--값을 offset, pageSize 총 두 개 받아와야 하므로 파라미터타입을 map으로-->
+    <select id="selectPage" parameterType="map" resultType="BoardDto">
+        <include refid="selectFromBoard"/>
+        ORDER BY reg_date DESC, bno DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <sql id="searchCondition">
+        <choose>
+            <when test='option=="T"'>
+                AND title LIKE concat('%', #{keyword}, '%')
+            </when>
+            <when test='option=="W"'>
+                AND writer LIKE concat('%', #{keyword}, '%')
+            </when>
+            <otherwise>
+                AND (title LIKE concat('%', #{keyword}, '%')
+                OR content like concat('%', #{keyword}, '%'))
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="searchSelectPage" parameterType="SearchCondition" resultType="BoardDto">
+        select bno,
+        title,
+        content,
+        writer,
+        view_cnt,
+        comment_cnt,
+        reg_date
+        from board
+        where true
+        <include refid="searchCondition"></include>
+        ORDER BY reg_date DESC, bno DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+
+    <!--검색결과가 몇개인지 알아야 페이징을 할 수 있으므로 카운트-->
+    <select id="searchResultCnt" parameterType="SearchCondition" resultType="int">
+        select count(*)
+        from board
+        where true
+        <include refid="searchCondition"></include>
+        ORDER BY reg_date DESC, bno DESC
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+
+    <update id="update" parameterType="BoardDto">
+        UPDATE board
+        SET title   = #{title}
+          , content = #{content}
+          , up_date = now()
+        WHERE bno = #{bno}
+          and writer = #{writer}
+    </update>
+
+    <!--매개변수가 cnt, bno 두 개이므로 parameterType을 map으로-->
+    <update id="updateCommentCnt" parameterType="map">
+        UPDATE board
+        SET comment_cnt = comment_cnt + #{cnt}
+        WHERE bno = #{bno}
+    </update>
+
+    <!-- 조회했을 때 조회수 하나 올림-->
+    <update id="increaseViewCnt" parameterType="int">
+        UPDATE board
+        SET view_cnt = view_cnt + 1
+        WHERE bno = #{bno}
+    </update>
+
+</mapper>
