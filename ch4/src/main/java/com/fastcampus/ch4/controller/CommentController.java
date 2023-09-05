@@ -37,18 +37,17 @@ public class CommentController {
     }
 
 
-
     //댓글 삭제하는 메소드. 삭제니까 DeleteMapping.
     @DeleteMapping("/comments/{cno}")    //   /comments/cno=1?bno=1085   <--삭제할 댓글 번호와 글번호
     @ResponseBody
-    public ResponseEntity<String> remove(@PathVariable Integer cno, Integer bno, HttpSession session){
+    public ResponseEntity<String> remove(@PathVariable Integer cno, Integer bno, HttpSession session) {
 
         //작성자는 세션에서 가져옴
-        String commenter = (String)session.getAttribute("id");
+        String commenter = (String) session.getAttribute("id");
         try {
-           int rowCnt = commentService.remove(cno, bno,commenter);
+            int rowCnt = commentService.remove(cno, bno, commenter);
 
-           if(rowCnt!=1) throw new Exception("Delete Failed");
+            if (rowCnt != 1) throw new Exception("Delete Failed");
 
             return new ResponseEntity<>("delete ok", HttpStatus.OK);
         } catch (Exception e) {
@@ -61,13 +60,27 @@ public class CommentController {
 
     //댓글 작성하는 메소드
     @PostMapping("/comments")  //  /ch4/comments?bno=1085  이런식으로 POST
-    @ResponseBody
+    @ResponseBody  //View 페이지가 아닌 반환값 그대로 클라이언트한테 return 하고 싶은 경우 @ResponseBody를 사용.
     //입력한 내용을 받아와야 되므로 CommentDto도 받아와야 함
-    public ResponseEntity<String> write(CommentDto dto, Integer bno, HttpSession session){
-        String commenter = (String)session.getAttribute("id");
+    //@RequestBody : JSON 형태의 데이터를 Java 객체로 매핑할때 사용
+    public ResponseEntity<String> write(@RequestBody CommentDto dto, Integer bno, HttpSession session) {
+        String commenter = (String) session.getAttribute("id");
 
+        dto.setComment(commenter);
+        dto.setBno(bno);
+        //dto에 잘들어가는지 출력
+        System.out.println(dto);
+
+        try {
+            if (commentService.write(dto) != 1)
+                throw new Exception("Write Failed");
+            return new ResponseEntity<String>("write ok", HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<String>("write error", HttpStatus.BAD_REQUEST);
+        }
 
 
     }
 
-    }
+}
