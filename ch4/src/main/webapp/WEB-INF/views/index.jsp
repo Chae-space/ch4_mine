@@ -16,7 +16,7 @@
 <body>
 <div id="menu">
     <ul>
-        <li id="logo">chae li logo</li>
+        <li id="logo">채은공간</li>
         <li><a href="<c:url value='/'/>">Home</a></li>
         <li><a href="<c:url value='/board/list'/>">Board</a></li>
         <li><a href="<c:url value='${loginOutLink}'/>">${loginOut}</a></li>
